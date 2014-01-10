@@ -44,10 +44,10 @@ $(function() {
 
     draw_gene();
 
-    var iMICRORNA_LAST_POS = draw_microrna(info["microrna"]);
+    var microrna_last_pos = draw_microrna(info["microrna"]);
     draw_scale();
 
-    draw_legend(iMICRORNA_LAST_POS);
+    draw_legend(microrna_last_pos);
 
     SVG.append("line")
        .attr("x1", iLEFT_PADDING)
@@ -56,22 +56,22 @@ $(function() {
        .attr("y2", iLEGEND_LAST_POS);
 });
 
-function assign_color(mirTab, effKey) {
+function assign_color(mir_array, effKey) {
     // Generate a gradient range
     var color = d3.scale.linear().domain([0.1, 1]).range(["blue", "red"]);
 
     // Associate a color to each microrna according to the gradient
-    for (var mir in mirTab) {
-        if (mirTab[mir][effKey] < 0.1) {
-            mirTab[mir].color = "#000";
+    for (var mir in mir_array) {
+        if (mir_array[mir][effKey] < 0.1) {
+            mir_array[mir].color = "#000";
         } else {
-            mirTab[mir].color = color(mirTab[mir][effKey]);
+            mir_array[mir].color = color(mir_array[mir][effKey]);
         }
     }
 
 }
 
-function draw_legend(mirnaFin){
+function draw_legend(microrna_last_pos){
     // The microrna with eff < 0.1 are not displayed in the legend
     var filtered_microrna = {};
     for (mir in mDATA["microrna"]) {
@@ -92,7 +92,7 @@ function draw_legend(mirnaFin){
     var max_label_width = 0;
 
     if (Object.keys(filtered_microrna).length == 0) {
-        iLEGEND_LAST_POS = iMICRORNA_LAST_POS;
+        iLEGEND_LAST_POS = microrna_last_pos;
     } else {
         for (mir in filtered_microrna) {
             legend_array.push(new LegendElement(filtered_microrna[mir]));
@@ -152,7 +152,7 @@ function draw_legend(mirnaFin){
         }
         // draw in the legend
         for (mir in legend_array) {
-            legend_array[mir].draw(iMICRORNA_LAST_POS);
+            legend_array[mir].draw(microrna_last_pos);
         }
 
         var width = iMICRORNA_WIDTH + iGAP;
@@ -162,11 +162,11 @@ function draw_legend(mirnaFin){
 
         var height = (total_row_height + 1) * (iLEGEND_MAX_HEIGHT + iGAP);
 
-        print_gradient(iLEFT_PADDING, iMICRORNA_LAST_POS, 5 * (iLEGEND_MAX_HEIGHT + iGAP));
+        print_gradient(iLEFT_PADDING, microrna_last_pos, 5 * (iLEGEND_MAX_HEIGHT + iGAP));
 
         var cadre = svg.append("rect")
                        .attr("x", iLEFT_PADDING + iGRADIENT_WIDTH + iGAP)
-                       .attr("y", iMICRORNA_LAST_POS)
+                       .attr("y", microrna_last_pos)
                        .attr("width", width)
                        .attr("height", height + iGAP)
                        .style("fill", "#000")
@@ -177,109 +177,150 @@ function draw_legend(mirnaFin){
         cadre.node().parentNode.insertBefore(cadre.node(), cadre.node().parentNode.firstChild);
 
         // update legend last position
-        iLEGEND_LAST_POS = iMICRORNA_LAST_POS + height;
+        iLEGEND_LAST_POS = microrna_last_pos + height;
     }
 }
 
-// ----print/gradient
-var printGradient = function(x, y, hauteurG) {
-    var gradient = svg.append("linearGradient").attr("id", "gradient").attr("y1", "0%").attr("y2", "100%").attr("x1", "0%").attr("x2", "0%").attr("gradientUnits", "objectBoundingBox");
+function print_gradient(x, y, gradient_height) {
+    var gradient = SVG.append("linearGradient")
+                      .attr("id", "gradient")
+                      .attr("y1", "0%")
+                      .attr("y2", "100%")
+                      .attr("x1", "0%")
+                      .attr("x2", "0%")
+                      .attr("gradientUnits", "objectBoundingBox");
 
-    gradient.append("stop").attr("offset", "0").attr("stop-color", "red").attr("stop-opacity", "1");
+    gradient.append("stop")
+            .attr("offset", "0")
+            .attr("stop-color", "red")
+            .attr("stop-opacity", "1");
 
-    gradient.append("stop").attr("offset", "0.3").attr("stop-color", "yellow").attr("stop-opacity", "1");
+    gradient.append("stop")
+            .attr("offset", "0.3")
+            .attr("stop-color", "yellow")
+            .attr("stop-opacity", "1");
 
-    gradient.append("stop").attr("offset", "0.6").attr("stop-color", "green").attr("stop-opacity", "1");
+    gradient.append("stop")
+            .attr("offset", "0.6")
+            .attr("stop-color", "green")
+            .attr("stop-opacity", "1");
 
-    gradient.append("stop").attr("offset", "0.90").attr("stop-color", "blue").attr("stop-opacity", "1");
+    gradient.append("stop")
+            .attr("offset", "0.90")
+            .attr("stop-color", "blue")
+            .attr("stop-opacity", "1");
 
-    gradient.append("stop").attr("offset", "1").attr("stop-color", "#000").attr("stop-opacity", "1");
+    gradient.append("stop")
+            .attr("offset", "1")
+            .attr("stop-color", "#000")
+            .attr("stop-opacity", "1");
 
-    svg.append("rect").attr("x", x).attr("y", y).attr("width", "10").attr("height", hauteurG).attr("fill", "url(#gradient)");
+    SVG.append("rect")
+       .attr("x", x)
+       .attr("y", y)
+       .attr("width", "10")
+       .attr("height", gradient_height)
+       .attr("fill", "url(#gradient)");
 }
-// ---- print/drawmir
-var drawMir = function(mirTab) {
 
-    // pour savoir la position de la dernière ligne
-    var ligneMax = 0;
+function draw_mir(microrna_array) {
+    // find out the position of the last row of microrna
+    var max_row = 0;
 
-    // pour tous les mir dans mirtab, on cacul la position en pixel, puis on regarde s'il y a chevauchement
+    // compute the position
+    for (var mir in microrna_array) {
+        microrna_array[mir]["positionRelative"] = Math.floor(iLEFT_PADDING + (iNT_WIDTH * microrna_array[mir]["position"]) + iMICRORNA_WIDTH / 2);
 
-    for (var mir in mirTab) {
-        mirTab[mir]["positionRelative"] = Math.floor(padgauche + (pixelparnt * mirTab[mir]["position"]) + grosseurHorinzonMirRect / 2);
-
-        mirTab[mir]["ligne"] = 1;
+        microrna_array[mir]["row"] = 1;
 
         // tant qu'il y a un chevauchement on descend d'une ligne
-        while (checkChevauchement(mirTab[mir])) {
-            mirTab[mir]["ligne"]++;
+        while (is_overlapping(microrna_array[mir])) {
+            microrna_array[mir]["row"]++;
         }
 
-        mirTab[mir]["rect"] = new MiRectangle(mirTab[mir]["ligne"], mirTab[mir]["positionRelative"], mirTab[mir]["color"], mirTab[mir]["quantity"], mirTab[mir]["name"], mirTab[mir]["position"], mirTab[mir]["number"], mirTab[mir]["effectiveness"]);
-        mirTab[mir]["rect"].draw();
-        if (mirTab[mir]["ligne"] > ligneMax)
-            ligneMax = mirTab[mir]["ligne"];
+        microrna_array[mir]["rect"] = new MiRectangle(microrna_array[mir]["row"],
+                                                      microrna_array[mir]["relative_position"],
+                                                      microrna_array[mir]["color"],
+                                                      microrna_array[mir]["quantity"],
+                                                      microrna_array[mir]["name"],
+                                                      microrna_array[mir]["position"],
+                                                      microrna_array[mir]["number"],
+                                                      microrna_array[mir]["effectiveness"]);
+        microrna_array[mir]["rectangle"].draw();
+        if (microrna_array[mir]["row"] > max_row)
+            max_row = microrna_array[mir]["row"];
 
-        var mirnaFin = GAP + hauteurDebutMir + (grosseurVertMirRect + GAP) * ligneMax;
+        var microrna_last_pos = iGAP + iINITIAL_MICRORNA_Y + (iMICRORNA_HEIGHT + iGAP) * max_row;
     }
-    console.log("ligneMax : " + ligneMax);
 
-    return mirnaFin;
-
-};
-
-//---------------------------------------------------------------------
-var checkChevauchement = function(mir) {
-    posMiAComparer = mir["positionRelative"];
-    ligneMiAComparer = mir["ligne"];
-    nomMiAComparer = mir["name"];
-
-    for (var mi in info["microrna"]) {
-        nomMiTest = info["microrna"][mi]["name"];
-        posMiTest = info["microrna"][mi]["positionRelative"];
-        ligneMiTest = info["microrna"][mi]["ligne"];
-
-        if (!(posMiTest == posMiAComparer && nomMiAComparer == nomMiTest))// pour ne pas comparer le mir a lui-meme
-        {
-            if (ligneMiAComparer !== 0)// compare seulement ceux qui on deja ete placez
-            {
-                if (posMiTest - 1 > posMiAComparer)// limite gauche
-                {
-                    if (posMiTest - 1 < posMiAComparer + grosseurHorinzonMirRect)
-                        if (ligneMiTest == ligneMiAComparer)
-                            return true;
-                } else if (posMiTest + 1 > posMiAComparer - grosseurHorinzonMirRect)
-                    if (ligneMiTest == ligneMiAComparer)
-                        return true;
-            }
-        }
-    }//-------------------------------------------- fin de la loop
-    return false;
-};
-
-//-- print/drawscale
-
-// permet de dessiner l'echelle au desus du mRna
-
-var drawscale = function() {
-
-    svg.append("line").attr("x1", padgauche).attr("y1", hauteurtickbar).attr("x2", width + padgauche).attr("y2", hauteurtickbar).style("stroke", "#000").style("stroke-width", "2");
-
-    tickbar();
-
+    return microrna_last_pos;
 }
-var tickbar = function() {
 
-    var distanceEntreLesTcks = divisionJusteDuMrna();
+function is_overlapping(microrna) {
+    position = microrna["relative_position"];
+    row = microrna["row"];
+    name = microrna["name"];
 
-    var taille = info["gene"]["length"];
-    var distancecritique = Math.floor(taille / 20);
+    var verdict = false;
+    for (var mir in mDATA["microrna"]) {
+        curr_name = mDATA["microrna"][mir]["name"];
+        curr_position = mDATA["microrna"][mir]["relative_position"];
+        curr_row = mDATA["microrna"][mir]["row"];
 
-    for (var off = 0; off <= taille - distancecritique; off += distanceEntreLesTcks) {
+        if ((curr_position != position || name != curr_name) &&
+            row !== 0 &&
+            ((curr_position - 1 > position && curr_position - 1 < position + iMICRORNA_WIDTH && curr_row == row) ||
+            (curr_position + 1 > position - iMICRORNA_WIDTH && curr_row == row))){
+                verdict = true;
+                break;
+            }
 
-        var posx = Math.floor(padgauche + off * pixelparnt);
+        // if (!(curr_position == position && name == curr_name)) // do not compare with itself
+        // {
+            // if (row !== 0)// compare seulement ceux qui on deja ete placez
+            // {
+                // if (curr_position - 1 > position)// limite gauche
+                // {
+                    // if (curr_position - 1 < position + iMICRORNA_WIDTH)
+                        // if (curr_row == row)
+                            // return true;
+                // } else if (curr_position + 1 > position - iMICRORNA_WIDTH)
+                    // if (curr_row == row)
+                        // return true;
+            // }
+        // }
+    }
+    return verdict;
+};
 
-        svg.append("line").attr("x1", posx).attr("y1", hauteurtickbar - hauteurtks).attr("x2", posx).attr("y2", hauteurtickbar + hauteurtks).style("stroke", "#000").style("stroke-width", "1");
+function draw_scale() {
+    SVG.append("line")
+       .attr("x1", iLEFT_PADDING)
+       .attr("y1", iSCALE_Y)
+       .attr("x2", iWIDTH + iLEFT_PADDING)
+       .attr("y2", iSCALE_Y)
+       .style("stroke", "#000")
+       .style("stroke-width", "2");
+
+    draw_ticks();
+}
+
+function draw_ticks() {
+    var spacing = get_gene_spacing();
+
+    var size = mDATA["gene"]["length"];
+    var critical_spacing = Math.floor(size / 20);
+
+    for (var off = 0; off <= size - critical_spacing; off += spacing) {
+        var x = Math.floor(iLEFT_PADDING + off * iNT_WIDTH);
+
+        SVG.append("line")
+           .attr("x1", x)
+           .attr("y1", iSCALE_Y - iSCALE_HEIGHT)
+           .attr("x2", x)
+           .attr("y2", iSCALE_Y + iSCALE_HEIGHT)
+           .style("stroke", "#000")
+           .style("stroke-width", "1");
 
         var id = "";
         if (off >= 1000) {
@@ -291,88 +332,90 @@ var tickbar = function() {
         } else
             id = "" + off;
 
-        svg.append("text").attr("x", posx).attr("y", hauteurtickbar - hauteurtks - 5).attr("fill", "#000").text(id);
+        SVG.append("text")
+           .attr("x", x)
+           .attr("y", iSCALE_Y - iSCALE_HEIGHT - 5)
+           .attr("fill", "#000")
+           .text(id);
 
     }
 
-    // derniere ligne
+    SVG.append("line")
+       .attr("x1", width + iLEFT_PADDING)
+       .attr("y1", iSCALE_Y - iSCALE_HEIGHT)
+       .attr("x2", width + iLEFT_PADDING)
+       .attr("y2", iSCALE_Y + iSCALE_HEIGHT)
+       .style("stroke", "#000")
+       .style("stroke-width", "1");
 
-    svg.append("line").attr("x1", width + padgauche).attr("y1", hauteurtickbar - hauteurtks).attr("x2", width + padgauche).attr("y2", hauteurtickbar + hauteurtks).style("stroke", "#000").style("stroke-width", "1");
-
-    svg.append("text").attr("x", width + padgauche).attr("y", hauteurtickbar - hauteurtks - 5).attr("fill", "#000").text(info["gene"]["length"]);
+    SVG.append("text")
+       .attr("x", width + iLEFT_PADDING)
+       .attr("y", iSCALE_Y - iSCALE_HEIGHT - 5)
+       .attr("fill", "#000")
+       .text(mDATA["gene"]["length"]);
 };
 
-var divisionJusteDuMrna = function() {
-    var taille = info["gene"]["length"];
+function get_gene_spacing(){
+    var size = mDATA["gene"]["length"];
     var x = 16000;
-    if (taille > x)
-        return 4000;
-    var timeout = 0;
-    while (x > 50 || timeOut > 20) {
+
+    while(size <= x && x > 20){
         x /= 2;
-
-        if (taille > x)
-            return Math.floor(x / 4);
-
-        timeout++;
     }
-
-    //minimum 5
-
-    return 5;
-
-};
-
-// print/printmrna
-var printNom = function() {
-    svg.append("text").attr("x", padgauche).attr("y", hauteurNom).attr("opacity", 1).style("font-weight", "bold").text(info["gene"]["name"] + " : " + info["gene"]["percentile"] + "%(percentile), " + info["gene"]["quantity"] + " copies");
-
+    
+    return Math.floor(x/4);
 }
-// print/printmrna/printmrna
-var printMRna = function() {
 
-    printNom();
+function draw_gene() {
+    SVG.append("text")
+       .attr("x", iLEFT_PADDING)
+       .attr("y", iNAME_Y)
+       .attr("opacity", 1)
+       .style("font-weight", "bold")
+       .text(info["gene"]["name"] + " : " + mDATA["gene"]["percentile"] + "%(percentile), " + mDATA["gene"]["quantity"] + " copies");
 
-    svg.append("rect").attr("x", padgauche).attr("y", hauteurGene).attr("width", width).attr("height", epaisseurGene).style("fill", "#000").style("stroke", "#000").style("stroke-width", "1");
+    SVG.append("rect")
+       .attr("x", iLEFT_PADDING)
+       .attr("y", iGENE_Y)
+       .attr("width", iWIDTH)
+       .attr("height", iGENE_HEIGHT)
+       .style("fill", "#000")
+       .style("stroke", "#000")
+       .style("stroke-width", "1");
 
-    var largeurReel = info["gene"]["cds_end"] * pixelparnt - info["gene"]["cds_start"] * pixelparnt + padgauche;
-    var debutCds = info["gene"]["cds_start"] * pixelparnt + padgauche;
+    var real_width = mDATA["gene"]["cds_end"] * iNT_WIDTH - mDATA["gene"]["cds_start"] * iNT_WIDTH + iLEFT_PADDING;
+    var cds_start = mDATA["gene"]["cds_start"] * iNT_WIDTH + iLEFT_PADDING;
 
-    svg.append("rect").attr("x", debutCds).attr("y", hauteurGene).attr("width", largeurReel).attr("height", epaisseurGene).style("fill", "#898484").style("stroke", "#898484").style("stroke-width", "1");
-};
-//- objet
-// coordonne35
-var Coordonne3_5 = function(total, troisP, cinqP) {
-    this.total = total;
-    this.troisP = troisP / total * width;
-    this.cinqP = cinqP / total * width;
-    //alert("3p : "+ this.troisP+"\n5p : "+this.cinqP)
-
-    function print() {
-
-    }
-
+    SVG.append("rect")
+       .attr("x", cds_start)
+       .attr("y", iGENE_Y)
+       .attr("width", real_width)
+       .attr("height", iGENE_HEIGHT)
+       .style("fill", "#898484")
+       .style("stroke", "#898484")
+       .style("stroke-width", "1");
 }
-//legelement
-var legElement = function(mir) {
 
+var LegendElement = function(mir) {
     this.name = mir.name;
-    var name = this.name;
     var targ = 0;
 
-    this.text = svg.append("text").attr("id", "text" + this.name).attr("pos", -1).attr("id", name + "text").attr("target", targ).attr("fill", "#000").attr("opacity", 1e-6).text(this.name);
+    this.text = SVG.append("text")
+                   .attr("id", "text" + this.name)
+                   .attr("pos", -1)
+                   .attr("id", this.name + "text")
+                   .attr("target", targ)
+                   .attr("fill", "#000")
+                   .attr("opacity", 1e-6)
+                   .text(this.name);
 
     this.box = this.text.node().getBBox();
 
     this.c = mir.color;
-
-    //var width = currentName.node().getComputedTextLength();
-
-}
+};
 
 legElement.prototype.draw = function(mirnaFin) {
-
-    var rect = new MiRectangle(this.ligne, 0, this.c, 0, this.name)
+    var rect = new MiRectangle(this.ligne, 0, this.c, 0, this.name);
 
     //var current = svg.select("text").attr("id",this.name);
 
