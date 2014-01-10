@@ -1,0 +1,29 @@
+body
+{
+background-color:white;
+}
+
+.outer {
+    width: 1200px;
+    height: 1000px;
+    overflow: auto;
+}
+.inner {
+    width: 1200px;
+    height: 2000px;
+}
+
+div.tooltip {   
+  position: absolute;           
+  text-align: right;         
+  min-width: 30px;  
+  min-height: 14px;                
+  padding: 2px;             
+  font: 12px sans-serif;        
+  background: white;   
+  border: 0px;      
+  border-radius: 8px;           
+  pointer-events: none;  
+  overflow: hidden;
+  
+}
