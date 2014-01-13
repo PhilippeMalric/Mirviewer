@@ -1,0 +1,39 @@
+width - iWIDTH
+espaceEntreGene_Mir - iSPACING
+GAP - iGAP
+padgauche - iLEFT_PADDING
+hauteurGene - iGENE_Y
+epaisseurGene - iGENE_HEIGHT
+hauteurNom - iNAME_Y
+grosseurVertMirRect - iMICRORNA_HEIGHT
+grosseurHorinzonMirRect - iMICRORNA_WIDTH
+hauteurDebutMir - iINITIAL_MICRORNA_Y
+hauteurtickbar - iSCALE_Y
+hauteurtks - iSCALE_HEIGHT
+largeurGradient - iGRADIENT_WIDTH
+nbcolormax - DELETED
+colorTab - aCOLOR
+finLegende - iLEGEND_LAST_POS
+clicked - mCLICKED
+largeurCol - aCOLUMN_WIDTH
+svg - SVG
+pixelparnt - iNT_WIDTH
+info - mDATA //map object containing all the needed info for the cell line
+mirnaFin - microrna_last_pos
+maxy - iLEGEND_MAX_HEIGHT
+div - DIV
+
+removeHsa() - DELETED COZ IT WILL BE SERVER_SIDE
+assignColor/assignColorSum - assign_color (effKey="effectiveness" for assignColor, "sum_effectiveness" for sum)
+printMRna - draw_gene
+drawMir - draw_microrna
+drawscale - draw_scale
+drawlegend - draw_legend
+printGradient - print_gradient
+checkChevauchement - is_overlapping
+tickbar - draw_ticks
+divisionJusteDuMrna - get_gene_spacing
+printNom - DELETED
+
+legElement - LegendElement
+MiRna - MiRNA
