@@ -254,10 +254,10 @@ function mirectangle_out() {
     var name = d3.event.target.id;
 
     if (mCLICKED[name] == undefined) {
-        var select = svg.selectAll("#" + name);
+        var select = SVG.selectAll("#" + name);
         select.style("stroke", "#000").style("stroke-width", "0.5");
     } else {
-        var select = svg.selectAll("#" + name);
+        var select = SVG.selectAll("#" + name);
         select.style("stroke", mCLICKED[name]).style("stroke-width", "2");
     }
 }
