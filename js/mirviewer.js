@@ -54,9 +54,11 @@ SVG.append("line").attr("x1", iLEFT_PADDING).attr("y1", iLEGEND_LAST_POS).attr("
 /* OBJECTS */
 function LegendElement(mir) {
     this.name = mir.name;
-    var targ = 0;
+    this.quantity = mir.quantity;
+    this.target = mir.target;
+    this.effectiveness = mir.sum_effectiveness;
 
-    this.text = SVG.append("text").attr("id", "text" + this.name).attr("pos", -1).attr("id", this.name + "text").attr("target", targ).attr("fill", "#000").attr("opacity", 1e-6).text(this.name);
+    this.text = SVG.append("text").attr("id", "text" + this.name).attr("pos", -1).attr("id", this.name + "text").attr("target", this.target).attr("fill", "#000").attr("opacity", 1e-6).text(this.name);
 
     this.box = this.text.node().getBBox();
 
@@ -68,7 +70,7 @@ function LegendElement(mir) {
 }
 
 function legend_element_draw(microrna_last_pos) {
-    var rect = new MiRectangle(this.row, 0, this.c, 0, this.name);
+    var rect = new MiRectangle(this.row, 0, this.c, this.quantity, this.name, 0, this.target, this.effectiveness);
 
     var y = microrna_last_pos + this.row * (iLEGEND_MAX_HEIGHT + iGAP) + iGAP;
     var x = iLEFT_PADDING + iGAP + iGRADIENT_WIDTH;
@@ -116,7 +118,7 @@ function legend_element_over() {
     select.style("stroke", "yellow").style("stroke-width", "2");
 }
 
-function legend_element_out(){
+function legend_element_out() {
     DIV.transition().duration(500).style("opacity", 1e-6);
 
     var id = d3.event.target.id;
@@ -137,7 +139,7 @@ function MiRectangle(row, positionR, c, quantity, name, pos, targ, eff) {
     this.row = row;
     this.positionR = positionR;
     this.c = c;
-    this.pos = Math.round(pos);
+    this.pos = pos;
     this.targ = targ;
     this.eff = eff;
 
@@ -148,7 +150,7 @@ function MiRectangle(row, positionR, c, quantity, name, pos, targ, eff) {
     this.click = mirectangle_click;
     this.over = mirectangle_over;
     this.out = mirectangle_out;
-    
+
 };
 
 function mirectangle_draw() {
@@ -158,22 +160,7 @@ function mirectangle_draw() {
     var targ = this.targ;
     var eff = this.eff;
 
-    var e1 = SVG.append("rect")
-                .attr("id", name)
-                .attr("pos", pos)
-                .attr("copies", copy)
-                .attr("target", targ)
-                .attr("eff", eff)
-                .attr("x", this.x1)
-                .attr("y", this.y1)
-                .attr("width", iMICRORNA_WIDTH)
-                .attr("height", iMICRORNA_HEIGHT)
-                .style("fill", this.c)
-                .style("stroke", "#000")
-                .style("stroke-width", "0.5")
-                .on("mouseover", this.over)
-                .on("mouseout", this.out)
-                .on("click", this.click);
+    var e1 = SVG.append("rect").attr("id", name).attr("pos", pos).attr("copies", copy).attr("target", targ).attr("eff", eff).attr("x", this.x1).attr("y", this.y1).attr("width", iMICRORNA_WIDTH).attr("height", iMICRORNA_HEIGHT).style("fill", this.c).style("stroke", "#000").style("stroke-width", "0.5").on("mouseover", this.over).on("mouseout", this.out).on("click", this.click);
 }
 
 function mirectangle_click() {
@@ -208,11 +195,13 @@ function mirectangle_over() {
 
     var ta = d3.event.target;
 
-    var name = "";
-    var copies = "";
-    var pos = "";
-    var target = "";
-    var eff = "";
+    var pos = this.pos;
+    var name = this.name;
+    var copies = this.quantity;
+    var targ = this.targ;
+    var eff = this.eff;
+
+    console.log(this);
 
     if (!firefox) {
         name = d3.event.target.id;
@@ -428,7 +417,14 @@ function draw_microrna(microrna_array) {
             microrna_array[mir]["row"]++;
         }
 
-        microrna_array[mir]["rectangle"] = new MiRectangle(microrna_array[mir]["row"], microrna_array[mir]["relative_position"], microrna_array[mir]["color"], microrna_array[mir]["quantity"], microrna_array[mir]["name"], microrna_array[mir]["position"], microrna_array[mir]["number"], microrna_array[mir]["effectiveness"]);
+        microrna_array[mir]["rectangle"] = new MiRectangle(microrna_array[mir]["row"],
+                                                           microrna_array[mir]["relative_position"],
+                                                           microrna_array[mir]["color"],
+                                                           microrna_array[mir]["quantity"],
+                                                           microrna_array[mir]["name"],
+                                                           microrna_array[mir]["position"],
+                                                           microrna_array[mir]["number"],
+                                                           microrna_array[mir]["effectiveness"]);
         microrna_array[mir]["rectangle"].draw();
         if (microrna_array[mir]["row"] > max_row)
             max_row = microrna_array[mir]["row"];
