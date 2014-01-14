@@ -30,7 +30,7 @@ var iLEGEND_LAST_POS = 0, iLEGEND_MAX_HEIGHT;
 var mCLICKED = {};
 var aCOLUMN_WIDTH = [];
 
-var SVG = d3.select("body").append("div").attr("class", "outer").append("class", "inner").append("svg");
+var SVG = d3.select(document.getElementById("svg_div")).append("svg");
 
 var iNT_WIDTH = iWIDTH / mDATA["gene"]["length"];
 

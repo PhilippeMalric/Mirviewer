@@ -1,0 +1,7 @@
+# This is the todo list of the project
+
+scale on the gradient
+more info in the tooltips in the legend
+"save as..." feature that allows to save the image in a pdf or a png or an svg
+zoom feature
+search box
