@@ -98,7 +98,7 @@ function legend_element_click() {
         select.style("stroke", mCLICKED[name]).style("stroke-width", "2");
     } else {
         if (res == undefined && aCOLOR.length == 0) {
-            console.log("max d'objet atteint");
+            // console.log("max d'objet atteint");
         } else {
             if (res != undefined) {
                 aCOLOR.push(res);
@@ -159,7 +159,6 @@ function mirectangle_draw() {
     var copy = this.quantity;
     var targ = this.targ;
     var eff = this.eff;
-
     var e1 = SVG.append("rect").attr("id", name).attr("pos", pos).attr("copies", copy).attr("target", targ).attr("eff", eff).attr("x", this.x1).attr("y", this.y1).attr("width", iMICRORNA_WIDTH).attr("height", iMICRORNA_HEIGHT).style("fill", this.c).style("stroke", "#000").style("stroke-width", "0.5").on("mouseover", this.over).on("mouseout", this.out).on("click", this.click);
 }
 
@@ -174,7 +173,7 @@ function mirectangle_click() {
         select.style("stroke", mCLICKED[name]).style("stroke-width", "2");
     } else {
         if (res == undefined && aCOLOR.length == 0) {
-            console.log("max d'objet atteint");
+            // console.log("max d'objet atteint");
         } else {
             if (res != undefined) {
                 aCOLOR.push(res);
@@ -201,8 +200,6 @@ function mirectangle_over() {
     var targ = this.targ;
     var eff = this.eff;
 
-    console.log(this);
-
     if (!firefox) {
         name = d3.event.target.id;
         copies = d3.event.target.attributes[2].firstChild.data;
@@ -227,10 +224,10 @@ function mirectangle_over() {
     var x = d3.event.target.x.animVal.value;
     var y = d3.event.target.y.animVal.value + 30;
 
-    console.log("x: " + x + " y:" + y);
+    // console.log("x: " + x + " y:" + y);
 
     DIV.html(text).style("left", x + "px").style("top", y + "px");
-    console.log(d3.event);
+    // console.log(d3.event);
 
     var select = SVG.selectAll("#" + d3.event.target.id);
 
@@ -250,24 +247,6 @@ function mirectangle_out() {
         select.style("stroke", mCLICKED[name]).style("stroke-width", "2");
     }
 }
-
-var MiRNA = function(name, position, eff, quantity) {
-    this.name = name;
-    this.position = position;
-    this.eff = eff;
-    this.quantite = quantity;
-    this.c = "#000";
-    this.positionRelative = 0;
-    this.ligne = 0;
-    this.rect = null;
-};
-
-var Gene = function(name, coord, mirTab) {
-    this.name = name;
-    this.coord = coord;
-    this.mirTab = mirTab;
-    this.pixParNt = (width / coord.total).toPrecision(3);
-};
 
 function assign_color(mir_array, effKey) {
     // Generate a gradient range
@@ -417,14 +396,7 @@ function draw_microrna(microrna_array) {
             microrna_array[mir]["row"]++;
         }
 
-        microrna_array[mir]["rectangle"] = new MiRectangle(microrna_array[mir]["row"],
-                                                           microrna_array[mir]["relative_position"],
-                                                           microrna_array[mir]["color"],
-                                                           microrna_array[mir]["quantity"],
-                                                           microrna_array[mir]["name"],
-                                                           microrna_array[mir]["position"],
-                                                           microrna_array[mir]["number"],
-                                                           microrna_array[mir]["effectiveness"]);
+        microrna_array[mir]["rectangle"] = new MiRectangle(microrna_array[mir]["row"], microrna_array[mir]["relative_position"], microrna_array[mir]["color"], microrna_array[mir]["quantity"], microrna_array[mir]["name"], microrna_array[mir]["position"], microrna_array[mir]["number"], microrna_array[mir]["effectiveness"]);
         microrna_array[mir]["rectangle"].draw();
         if (microrna_array[mir]["row"] > max_row)
             max_row = microrna_array[mir]["row"];
@@ -446,25 +418,11 @@ function is_overlapping(microrna) {
         curr_position = mDATA["microrna"][mir]["relative_position"];
         curr_row = mDATA["microrna"][mir]["row"];
 
-        if ((curr_position != position || name != curr_name) && row !== 0 && ((curr_position - 1 > position && curr_position - 1 < position + iMICRORNA_WIDTH && curr_row == row) || (curr_position + 1 > position - iMICRORNA_WIDTH && curr_row == row))) {
+        if ((!(curr_position == position && name == curr_name)) && (row !== 0) && (curr_row == row) && (((curr_position - 1 > position) && (curr_position - 1 < position + iMICRORNA_WIDTH)) || (!(curr_position - 1 > position) && (curr_position + 1 > position - iMICRORNA_WIDTH))
+        )) {
             verdict = true;
             break;
         }
-
-        // if (!(curr_position == position && name == curr_name)) // do not compare with itself
-        // {
-        // if (row !== 0)// compare seulement ceux qui on deja ete placez
-        // {
-        // if (curr_position - 1 > position)// limite gauche
-        // {
-        // if (curr_position - 1 < position + iMICRORNA_WIDTH)
-        // if (curr_row == row)
-        // return true;
-        // } else if (curr_position + 1 > position - iMICRORNA_WIDTH)
-        // if (curr_row == row)
-        // return true;
-        // }
-        // }
     }
     return verdict;
 };
@@ -512,12 +470,11 @@ function get_gene_spacing() {
     while (size <= x && x > 20) {
         x /= 2;
     }
-
     return Math.floor(x / 4);
 }
 
 function draw_gene() {
-    SVG.append("text").attr("x", iLEFT_PADDING).attr("y", iNAME_Y).attr("opacity", 1).style("font-weight", "bold").text(mDATA["gene"]["name"] + " : " + mDATA["gene"]["percentile"] + "%(percentile), " + mDATA["gene"]["quantity"] + " copies");
+    SVG.append("text").attr("x", iLEFT_PADDING).attr("y", iNAME_Y).attr("opacity", 1).style("font-weight", "bold").text(mDATA["gene"]["name"] + ": percentile " + mDATA["gene"]["percentile"] + ", " + mDATA["gene"]["quantity"] + " copies");
 
     SVG.append("rect").attr("x", iLEFT_PADDING).attr("y", iGENE_Y).attr("width", iWIDTH).attr("height", iGENE_HEIGHT).style("fill", "#000").style("stroke", "#000").style("stroke-width", "1");
 
