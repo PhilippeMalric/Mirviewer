@@ -30,26 +30,27 @@ var iLEGEND_LAST_POS = 0, iLEGEND_MAX_HEIGHT;
 var mCLICKED = {};
 var aCOLUMN_WIDTH = [];
 
-var SVG = d3.select(document.getElementById("svg_div")).append("svg");
-
 var iNT_WIDTH = iWIDTH / mDATA["gene"]["length"];
 
-var DIV = d3.select("body").append("div").attr("class", "tooltip").style("opacity", 1e-6);
+var SVG, DIV;
 
-// $(function() {
-SVG.attr("width", window.innerWidth).attr("height", window.innerHeight);
+$(function() {
+    SVG = d3.select(document.getElementById("svg_div")).append("svg");
+    DIV = d3.select("body").append("div").attr("class", "tooltip").style("opacity", 1e-6);
+    SVG.attr("id", "svg_elem");
+    SVG.attr("width", window.innerWidth).attr("height", window.innerHeight);
 
-assign_color(mDATA["microrna"], "effectiveness");
+    assign_color(mDATA["microrna"], "effectiveness");
 
-draw_gene();
+    draw_gene();
 
-var microrna_last_pos = draw_microrna(mDATA["microrna"]);
-draw_scale();
+    var microrna_last_pos = draw_microrna(mDATA["microrna"]);
+    draw_scale();
 
-draw_legend(microrna_last_pos);
+    draw_legend(microrna_last_pos);
 
-SVG.append("line").attr("x1", iLEFT_PADDING).attr("y1", iLEGEND_LAST_POS).attr("x2", iWIDTH + iLEFT_PADDING).attr("y2", iLEGEND_LAST_POS);
-// });
+    SVG.append("line").attr("x1", iLEFT_PADDING).attr("y1", iLEGEND_LAST_POS).attr("x2", iWIDTH + iLEFT_PADDING).attr("y2", iLEGEND_LAST_POS);
+});
 
 /* OBJECTS */
 function LegendElement(mir) {
@@ -58,7 +59,7 @@ function LegendElement(mir) {
     this.target = mir.target;
     this.effectiveness = mir.sum_effectiveness;
 
-    this.text = SVG.append("text").attr("id", "text" + this.name).attr("pos", -1).attr("id", this.name + "text").attr("target", this.target).attr("fill", "#000").attr("opacity", 1e-6).text(this.name);
+    this.text = SVG.append("text").attr("id", this.name + "_" + this.pos).attr("name", this.name).attr("pos", -1).attr("target", this.target).attr("fill", "#000").attr("opacity", 1e-6).text(this.name);
 
     this.box = this.text.node().getBBox();
 
@@ -114,7 +115,8 @@ function legend_element_click() {
 function legend_element_over() {
     var id = d3.event.target.id;
 
-    var select = SVG.selectAll("#" + id.substring(0, id.length - "text".length));
+    var elem_class = $(this).attr("name");
+    var select = SVG.selectAll("." + elem_class);
     select.style("stroke", "yellow").style("stroke-width", "2");
 }
 
@@ -125,10 +127,12 @@ function legend_element_out() {
     var name = id.substring(0, id.length - "text".length);
 
     if (mCLICKED[name] == undefined) {
-        var select = SVG.selectAll("#" + name);
+        var elem_class = $(this).attr("name");
+        var select = SVG.selectAll("." + elem_class);
         select.style("stroke", "#000").style("stroke-width", "0.5");
     } else {
-        var select = SVG.selectAll("#" + name);
+        var elem_class = $(this).attr("name");
+        var select = SVG.selectAll("." + elem_class);
         select.style("stroke", mCLICKED[name]).style("stroke-width", "2");
     }
 }
@@ -141,7 +145,8 @@ function MiRectangle(row, positionR, c, quantity, name, pos, targ, eff) {
     this.c = c;
     this.pos = pos;
     this.targ = targ;
-    this.eff = eff;
+    this.eff = (eff*100).toFixed(2);
+    // this.eff = eff;
 
     this.y1 = iINITIAL_MICRORNA_Y + (iMICRORNA_HEIGHT + iGAP) * (row - 1);
     this.x1 = positionR - iMICRORNA_WIDTH;
@@ -159,7 +164,24 @@ function mirectangle_draw() {
     var copy = this.quantity;
     var targ = this.targ;
     var eff = this.eff;
-    var e1 = SVG.append("rect").attr("id", name).attr("pos", pos).attr("copies", copy).attr("target", targ).attr("eff", eff).attr("x", this.x1).attr("y", this.y1).attr("width", iMICRORNA_WIDTH).attr("height", iMICRORNA_HEIGHT).style("fill", this.c).style("stroke", "#000").style("stroke-width", "0.5").on("mouseover", this.over).on("mouseout", this.out).on("click", this.click);
+
+    SVG.append("rect")
+       .attr("id", name + "_" + pos)
+       .attr("class", name)
+       .attr("data-pos", pos)
+       .attr("data-quantity", copy)
+       .attr("data-target", targ)
+       .attr("data-effectiveness", eff)
+       .attr("x", this.x1)
+       .attr("y", this.y1)
+       .attr("width", iMICRORNA_WIDTH)
+       .attr("height", iMICRORNA_HEIGHT)
+       .style("fill", this.c)
+       .style("stroke", "#000")
+       .style("stroke-width", "0.5")
+       .on("mouseover", this.over)
+       .on("mouseout", this.out)
+       .on("click", this.click);
 }
 
 function mirectangle_click() {
@@ -187,50 +209,30 @@ function mirectangle_click() {
 }
 
 function mirectangle_over() {
-    // firefox checking
-    var firefox = navigator.userAgent.indexOf('Firefox') != -1;
-
     DIV.transition().duration(500).style("opacity", 0.9);
 
     var ta = d3.event.target;
 
-    var pos = this.pos;
-    var name = this.name;
-    var copies = this.quantity;
-    var targ = this.targ;
-    var eff = this.eff;
-
-    if (!firefox) {
-        name = d3.event.target.id;
-        copies = d3.event.target.attributes[2].firstChild.data;
-        pos = d3.event.target.attributes[1].firstChild.data;
-        target = d3.event.target.attributes[3].firstChild.data;
-        eff = d3.event.target.attributes[4].firstChild.data;
-    } else {
-        name = d3.event.target.id;
-        copies = d3.event.target.attributes[2].nodeValue;
-        pos = d3.event.target.attributes[1].nodeValue;
-        target = d3.event.target.attributes[3].nodeValue;
-        eff = d3.event.target.attributes[4].nodeValue;
-    }
+    var pos = $(this).data("pos");
+    var name = $(this).attr("class");
+    var copies = $(this).data("quantity");
+    var target = $(this).data("target");
+    var eff = $(this).data("effectiveness");
 
     var text = "";
     if (pos != 0) {
-        text = name + " @ " + pos + "<br/>" + copies + " copies<br/>" + target + " target(s)<br/>effectiveness : " + eff;
+        text = name + " @ " + pos + "<br/>" + copies + " copies<br/>" + target + " target(s)<br/>effectiveness : " + eff + "%";
     } else {
-        text = d3.event.target.id;
+        text = name;
     }
 
-    var x = d3.event.target.x.animVal.value;
-    var y = d3.event.target.y.animVal.value + 30;
-
-    // console.log("x: " + x + " y:" + y);
+    var x = d3.event.pageX + 10;
+    var y = d3.event.pageY + 10;
 
     DIV.html(text).style("left", x + "px").style("top", y + "px");
-    // console.log(d3.event);
 
-    var select = SVG.selectAll("#" + d3.event.target.id);
-
+    var elem_class = $(this).attr("class");
+    var select = SVG.selectAll("." + elem_class);
     select.style("stroke", "yellow").style("stroke-width", "2");
 }
 
@@ -240,10 +242,12 @@ function mirectangle_out() {
     var name = d3.event.target.id;
 
     if (mCLICKED[name] == undefined) {
-        var select = SVG.selectAll("#" + name);
+        var elem_class = $(this).attr("class");
+        var select = SVG.selectAll("." + elem_class);
         select.style("stroke", "#000").style("stroke-width", "0.5");
     } else {
-        var select = SVG.selectAll("#" + name);
+        var elem_class = $(this).attr("class");
+        var select = SVG.selectAll("." + elem_class);
         select.style("stroke", mCLICKED[name]).style("stroke-width", "2");
     }
 }
@@ -474,8 +478,6 @@ function get_gene_spacing() {
 }
 
 function draw_gene() {
-    SVG.append("text").attr("x", iLEFT_PADDING).attr("y", iNAME_Y).attr("opacity", 1).style("font-weight", "bold").text(mDATA["gene"]["name"] + ": percentile " + mDATA["gene"]["percentile"] + ", " + mDATA["gene"]["quantity"] + " copies");
-
     SVG.append("rect").attr("x", iLEFT_PADDING).attr("y", iGENE_Y).attr("width", iWIDTH).attr("height", iGENE_HEIGHT).style("fill", "#000").style("stroke", "#000").style("stroke-width", "1");
 
     var real_width = mDATA["gene"]["cds_end"] * iNT_WIDTH - mDATA["gene"]["cds_start"] * iNT_WIDTH + iLEFT_PADDING;
