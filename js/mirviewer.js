@@ -9,7 +9,7 @@
  */
 
 /* CONSTANTS */
-var iWIDTH = 1000, iSPACING = 3, iGAP = 10, iLEFT_PADDING = 15;
+var iWIDTH = 1000, iSPACING = 3, iGAP = 10, iLEFT_PADDING = 15, iMIR_SPACING = 2;
 
 // gene
 var iGENE_Y = 50, iGENE_HEIGHT = 5, iNAME_Y = 15;
@@ -165,7 +165,12 @@ function mirectangle_draw() {
     var targ = this.targ;
     var eff = this.eff;
 
-    SVG.append("rect").attr("id", name + "_" + pos).attr("class", name).attr("data-pos", pos).attr("data-quantity", copy).attr("data-target", targ).attr("data-effectiveness", eff).attr("x", this.x1).attr("y", this.y1).attr("width", iMICRORNA_WIDTH).attr("height", iMICRORNA_HEIGHT).style("fill", this.c).style("stroke", "#000").style("stroke-width", "0.5").on("mouseover", this.over).on("mouseout", this.out).on("click", this.click);
+    SVG.append("rect")
+	.attr("id", name + "_" + pos)
+	.attr("class", name)
+	.attr("data-pos", pos)
+	.attr("data-quantity", copy)
+	.attr("data-target", targ).attr("data-effectiveness", eff).attr("x", this.x1).attr("y", this.y1).attr("width", iMICRORNA_WIDTH).attr("height", iMICRORNA_HEIGHT).style("fill", this.c).style("stroke", "#000").style("stroke-width", "0.5").on("mouseover", this.over).on("mouseout", this.out).on("click", this.click);
 }
 
 function mirectangle_click() {
@@ -411,7 +416,7 @@ function is_overlapping(microrna, map_row) {
 
     var verdict = false;
 
-    for (var i = (position) ; i <= (position + iMICRORNA_WIDTH); i++){
+    for (var i = (position - iMIR_SPACING) ; i <= (position + iMICRORNA_WIDTH + iMIR_SPACING); i++){
         if (map_row[i] != undefined){
             verdict = true;
             break;
@@ -426,7 +431,7 @@ function is_overlapping(microrna, map_row) {
     }
     
     return verdict;
-};
+}
 
 function draw_scale() {
     SVG.append("line").attr("x1", iLEFT_PADDING).attr("y1", iSCALE_Y).attr("x2", iWIDTH + iLEFT_PADDING).attr("y2", iSCALE_Y).style("stroke", "#000").style("stroke-width", "2");
