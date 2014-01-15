@@ -145,7 +145,7 @@ function MiRectangle(row, positionR, c, quantity, name, pos, targ, eff) {
     this.c = c;
     this.pos = pos;
     this.targ = targ;
-    this.eff = (eff*100).toFixed(2);
+    this.eff = (eff * 100).toFixed(2);
     // this.eff = eff;
 
     this.y1 = iINITIAL_MICRORNA_Y + (iMICRORNA_HEIGHT + iGAP) * (row - 1);
@@ -165,23 +165,7 @@ function mirectangle_draw() {
     var targ = this.targ;
     var eff = this.eff;
 
-    SVG.append("rect")
-       .attr("id", name + "_" + pos)
-       .attr("class", name)
-       .attr("data-pos", pos)
-       .attr("data-quantity", copy)
-       .attr("data-target", targ)
-       .attr("data-effectiveness", eff)
-       .attr("x", this.x1)
-       .attr("y", this.y1)
-       .attr("width", iMICRORNA_WIDTH)
-       .attr("height", iMICRORNA_HEIGHT)
-       .style("fill", this.c)
-       .style("stroke", "#000")
-       .style("stroke-width", "0.5")
-       .on("mouseover", this.over)
-       .on("mouseout", this.out)
-       .on("click", this.click);
+    SVG.append("rect").attr("id", name + "_" + pos).attr("class", name).attr("data-pos", pos).attr("data-quantity", copy).attr("data-target", targ).attr("data-effectiveness", eff).attr("x", this.x1).attr("y", this.y1).attr("width", iMICRORNA_WIDTH).attr("height", iMICRORNA_HEIGHT).style("fill", this.c).style("stroke", "#000").style("stroke-width", "0.5").on("mouseover", this.over).on("mouseout", this.out).on("click", this.click);
 }
 
 function mirectangle_click() {
@@ -194,16 +178,12 @@ function mirectangle_click() {
 
         select.style("stroke", mCLICKED[name]).style("stroke-width", "2");
     } else {
-        if (res == undefined && aCOLOR.length == 0) {
-            // console.log("max d'objet atteint");
-        } else {
-            if (res != undefined) {
-                aCOLOR.push(res);
-                mCLICKED[name] = undefined;
+        if (res != undefined) {
+            aCOLOR.push(res);
+            mCLICKED[name] = undefined;
 
-                var select = SVG.selectAll("#" + d3.event.target.id);
-                select.style("stroke", "#000").style("stroke-width", "0.5");
-            }
+            var select = SVG.selectAll("#" + d3.event.target.id);
+            select.style("stroke", "#000").style("stroke-width", "0.5");
         }
     }
 }
@@ -387,7 +367,10 @@ function print_gradient(x, y, gradient_height) {
 
 function draw_microrna(microrna_array) {
     // find out the position of the last row of microrna
+    var microrna_last_pos = 0;
     var max_row = 0;
+
+    var map_rows = [];
 
     // compute the position
     for (var mir in microrna_array) {
@@ -395,39 +378,53 @@ function draw_microrna(microrna_array) {
 
         microrna_array[mir]["row"] = 1;
 
-        // tant qu'il y a un chevauchement on descend d'une ligne
-        while (is_overlapping(microrna_array[mir])) {
-            microrna_array[mir]["row"]++;
+        // verify the next row until there's no overlap 
+        while (true){
+            
+            if (map_rows[microrna_array[mir]["row"]] == undefined){
+                map_rows[microrna_array[mir]["row"]] = [];
+            }
+            if (!is_overlapping(microrna_array[mir], map_rows[microrna_array[mir]["row"]])){
+                break;
+            }
+            else {
+                microrna_array[mir]["row"]++;
+            }
         }
 
         microrna_array[mir]["rectangle"] = new MiRectangle(microrna_array[mir]["row"], microrna_array[mir]["relative_position"], microrna_array[mir]["color"], microrna_array[mir]["quantity"], microrna_array[mir]["name"], microrna_array[mir]["position"], microrna_array[mir]["number"], microrna_array[mir]["effectiveness"]);
         microrna_array[mir]["rectangle"].draw();
-        if (microrna_array[mir]["row"] > max_row)
+        if (microrna_array[mir]["row"] > max_row) {
             max_row = microrna_array[mir]["row"];
+        }
 
-        var microrna_last_pos = iGAP + iINITIAL_MICRORNA_Y + (iMICRORNA_HEIGHT + iGAP) * max_row;
+        microrna_last_pos = iGAP + iINITIAL_MICRORNA_Y + (iMICRORNA_HEIGHT + iGAP) * max_row;
     }
 
     return microrna_last_pos;
 }
 
-function is_overlapping(microrna) {
+function is_overlapping(microrna, map_row) {
     position = microrna["relative_position"];
     row = microrna["row"];
     name = microrna["name"];
 
     var verdict = false;
-    for (var mir in mDATA["microrna"]) {
-        curr_name = mDATA["microrna"][mir]["name"];
-        curr_position = mDATA["microrna"][mir]["relative_position"];
-        curr_row = mDATA["microrna"][mir]["row"];
 
-        if ((!(curr_position == position && name == curr_name)) && (row !== 0) && (curr_row == row) && (((curr_position - 1 > position) && (curr_position - 1 < position + iMICRORNA_WIDTH)) || (!(curr_position - 1 > position) && (curr_position + 1 > position - iMICRORNA_WIDTH))
-        )) {
+    for (var i = (position) ; i <= (position + iMICRORNA_WIDTH); i++){
+        if (map_row[i] != undefined){
             verdict = true;
             break;
         }
     }
+
+    if (!verdict){
+        // add the microrna in the row's map'
+        for (var i = (position) ; i <= (position + iMICRORNA_WIDTH); i++){
+            map_row[i] = true;
+        }
+    }
+    
     return verdict;
 };
 
@@ -455,8 +452,9 @@ function draw_ticks() {
             } else {
                 id += (off / 1000).toFixed(1) + "K";
             }
-        } else
+        } else {
             id = "" + off;
+        }
 
         SVG.append("text").attr("x", x).attr("y", iSCALE_Y - iSCALE_HEIGHT - 5).attr("fill", "#000").text(id);
 
